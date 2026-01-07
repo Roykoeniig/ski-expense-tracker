@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { Calculator, ArrowRight, Users } from 'lucide-react'
 import { Expense, User, Settlement, Currency } from '@/types'
 import { getExpenses, getUsers } from '@/lib/storage'
-import { formatCurrency } from '@/lib/currency'
-import { getExchangeRates } from '@/lib/currency'
+import { formatCurrency, getExchangeRates, convertCurrency } from '@/lib/currency'
 import { calculateSettlements } from '@/lib/settlement'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import { useLanguage } from '@/lib/language'
@@ -28,9 +27,13 @@ export default function SettlementPage() {
     }
   }, [expenses, users, baseCurrency])
 
-  const loadData = () => {
-    setExpenses(getExpenses())
-    setUsers(getUsers())
+  const loadData = async () => {
+    const [expensesData, usersData] = await Promise.all([
+      getExpenses(),
+      getUsers()
+    ])
+    setExpenses(expensesData)
+    setUsers(usersData)
   }
 
   const calculateSettlement = async () => {
@@ -50,25 +53,51 @@ export default function SettlementPage() {
     return users.find(u => u.id === userId)?.name || userId
   }
 
-  // 计算每个用户的余额
-  const getUserBalances = () => {
-    const balances: Record<string, number> = {}
-    users.forEach(user => {
-      balances[user.id] = 0
-    })
+  // 计算每个用户的余额（考虑货币转换）
+  const [balances, setBalances] = useState<Record<string, number>>({})
+  
+  useEffect(() => {
+    const calculateBalances = async () => {
+      if (expenses.length === 0 || users.length === 0) {
+        setBalances({})
+        return
+      }
 
-    expenses.forEach(expense => {
-      const sharePerPerson = expense.amount / expense.sharedBy.length
-      balances[expense.paidBy] = (balances[expense.paidBy] || 0) + expense.amount
-      expense.sharedBy.forEach(userId => {
-        balances[userId] = (balances[userId] || 0) - sharePerPerson
+      const newBalances: Record<string, number> = {}
+      users.forEach(user => {
+        newBalances[user.id] = 0
       })
-    })
 
-    return balances
-  }
+      try {
+        const rates = await getExchangeRates(baseCurrency)
+        
+        expenses.forEach(expense => {
+          // 将金额转换为基础货币
+          const amountInBase = convertCurrency(expense.amount, expense.currency, baseCurrency, rates)
+          const sharePerPerson = amountInBase / expense.sharedBy.length
+          
+          newBalances[expense.paidBy] = (newBalances[expense.paidBy] || 0) + amountInBase
+          expense.sharedBy.forEach(userId => {
+            newBalances[userId] = (newBalances[userId] || 0) - sharePerPerson
+          })
+        })
+      } catch (error) {
+        console.error('Failed to calculate balances:', error)
+        // 如果转换失败，使用原始金额（不推荐，但至少不会崩溃）
+        expenses.forEach(expense => {
+          const sharePerPerson = expense.amount / expense.sharedBy.length
+          newBalances[expense.paidBy] = (newBalances[expense.paidBy] || 0) + expense.amount
+          expense.sharedBy.forEach(userId => {
+            newBalances[userId] = (newBalances[userId] || 0) - sharePerPerson
+          })
+        })
+      }
 
-  const balances = getUserBalances()
+      setBalances(newBalances)
+    }
+
+    calculateBalances()
+  }, [expenses, users, baseCurrency])
 
   return (
     <div className="container mx-auto px-4 py-8 relative z-10">

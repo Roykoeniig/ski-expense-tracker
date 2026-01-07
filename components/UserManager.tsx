@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Users, Plus, X, User, Shield, ShieldCheck, LogOut, Key } from 'lucide-react'
 import { User as UserType, UserRole } from '@/types'
-import { getUsers, saveUsers } from '@/lib/storage'
+import { getUsers, saveUsers, getUsersSync, saveUsersSync } from '@/lib/storage'
 import { useLanguage } from '@/lib/language'
 import { hasPermission, getCurrentUser, logout } from '@/lib/auth'
 import ChangePasswordModal from './ChangePasswordModal'
@@ -53,7 +53,7 @@ export default function UserManager() {
     }
 
     const updatedUsers = [...users, newUser]
-    saveUsers(updatedUsers)
+    saveUsersSync(updatedUsers)
     setUsers(updatedUsers)
     setNewUserName('')
     setNewUserPassword('')
@@ -86,7 +86,7 @@ export default function UserManager() {
 
     if (confirm(t('users.deleteConfirm'))) {
       const updatedUsers = users.filter(u => u.id !== id)
-      saveUsers(updatedUsers)
+      saveUsersSync(updatedUsers)
       setUsers(updatedUsers)
     }
   }

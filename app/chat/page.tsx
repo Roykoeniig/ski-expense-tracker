@@ -4,8 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import { Send, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { ChatMessage } from '@/types'
 import { parseExpenseFromText } from '@/lib/ai'
-import { addExpense } from '@/lib/storage'
-import { getUsers } from '@/lib/storage'
+import { addExpenseSync } from '@/lib/storage'
+import { getUsersSync } from '@/lib/storage'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import { useLanguage } from '@/lib/language'
 
@@ -72,7 +72,7 @@ export default function ChatPage() {
 
       if (expense) {
         // 自动创建记账
-        const users = getUsers()
+        const users = getUsersSync()
         if (users.length > 0) {
           const newExpense = {
             id: Date.now().toString(),
@@ -81,7 +81,7 @@ export default function ChatPage() {
             sharedBy: expense.sharedBy || users.map(u => u.id),
             createdAt: new Date().toISOString(),
           }
-          addExpense(newExpense)
+          addExpenseSync(newExpense)
 
           const assistantMessage: ChatMessage = {
             id: (Date.now() + 1).toString(),

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, Edit, Trash2, Filter } from 'lucide-react'
 import { Expense, User, Currency } from '@/types'
-import { getExpenses, getUsers, addExpense, updateExpense, deleteExpense } from '@/lib/storage'
+import { getExpenses, getUsers, addExpenseSync, updateExpenseSync, deleteExpenseSync } from '@/lib/storage'
 import { formatCurrency } from '@/lib/currency'
 import ExpenseForm from '@/components/ExpenseForm'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
@@ -21,26 +21,30 @@ export default function ExpensesPage() {
     loadData()
   }, [])
 
-  const loadData = () => {
-    setExpenses(getExpenses())
-    setUsers(getUsers())
+  const loadData = async () => {
+    const [expensesData, usersData] = await Promise.all([
+      getExpenses(),
+      getUsers()
+    ])
+    setExpenses(expensesData)
+    setUsers(usersData)
   }
 
   const handleAdd = (expense: Expense) => {
-    addExpense(expense)
+    addExpenseSync(expense)
     loadData()
     setShowForm(false)
   }
 
   const handleUpdate = (expense: Expense) => {
-    updateExpense(expense.id, expense)
+    updateExpenseSync(expense.id, expense)
     loadData()
     setEditingExpense(null)
   }
 
   const handleDelete = (id: string) => {
     if (confirm(t('expenses.deleteConfirm'))) {
-      deleteExpense(id)
+      deleteExpenseSync(id)
       loadData()
     }
   }
