@@ -61,14 +61,14 @@ export default function ChatPage() {
 
     try {
       // 如果有图片，先上传
-      let imageUrl = imagePreview
+      let imageUrl: string | undefined = imagePreview || undefined
       if (imageFile) {
         // 这里应该上传到服务器，暂时使用base64
-        imageUrl = imagePreview
+        imageUrl = imagePreview || undefined
       }
 
       // 调用AI解析
-      const expense = await parseExpenseFromText(input || t('chat.placeholder'), imageUrl || undefined)
+      const expense = await parseExpenseFromText(input || t('chat.placeholder'), imageUrl)
 
       if (expense) {
         // 自动创建记账
