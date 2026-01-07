@@ -3,19 +3,16 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Mountain, Home, Calculator, MessageSquare, Users, Camera } from 'lucide-react'
-import { useLanguage } from '@/lib/language'
-import LanguageSwitcher from './LanguageSwitcher'
 
 export default function Navigation() {
   const pathname = usePathname()
-  const { t } = useLanguage()
 
   const navItems = [
-    { href: '/', labelKey: 'common.home', icon: Home },
-    { href: '/expenses', labelKey: 'common.expenses', icon: Calculator },
-    { href: '/chat', labelKey: 'common.chat', icon: MessageSquare },
-    { href: '/settlement', labelKey: 'common.settlement', icon: Users },
-    { href: '/photos', labelKey: 'common.photos', icon: Camera },
+    { href: '/', label: '首页', icon: Home },
+    { href: '/expenses', label: '记账', icon: Calculator },
+    { href: '/chat', label: 'AI记账', icon: MessageSquare },
+    { href: '/settlement', label: '结算', icon: Users },
+    { href: '/photos', label: '照片', icon: Camera },
   ]
 
   return (
@@ -29,20 +26,17 @@ export default function Navigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center space-y-1 px-2 sm:px-4 py-2 rounded-lg transition-colors ${
+                className={`flex flex-col items-center space-y-1 px-4 py-2 rounded-lg transition-colors ${
                   isActive
                     ? 'text-ski-primary bg-ski-primary/10'
                     : 'text-gray-600 hover:text-ski-primary'
                 }`}
               >
-                <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
-                <span className="text-xs font-medium hidden sm:inline">{t(item.labelKey)}</span>
+                <Icon className="w-6 h-6" />
+                <span className="text-xs font-medium">{item.label}</span>
               </Link>
             )
           })}
-          <div className="flex flex-col items-center">
-            <LanguageSwitcher />
-          </div>
         </div>
       </div>
     </nav>
