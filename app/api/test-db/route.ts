@@ -17,13 +17,13 @@ export async function GET() {
     // 测试连接：尝试查询用户表
     const { data: users, error: usersError } = await supabase
       .from('users')
-      .select('count')
+      .select('id')
       .limit(1);
 
     // 测试连接：尝试查询记账表
     const { data: expenses, error: expensesError } = await supabase
       .from('expenses')
-      .select('count')
+      .select('id')
       .limit(1);
 
     if (usersError || expensesError) {
@@ -54,4 +54,5 @@ export async function GET() {
     });
   }
 }
+
 
