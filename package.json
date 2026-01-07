@@ -12,6 +12,7 @@
     "cap:build": "npm run build && npx cap sync"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.89.0",
     "axios": "^1.6.0",
     "date-fns": "^2.30.0",
     "lucide-react": "^0.294.0",
