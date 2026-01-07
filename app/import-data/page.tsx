@@ -255,7 +255,7 @@ export default function ImportDataPage() {
                         {status.details.tests && (
                           <div className="mt-2 space-y-1">
                             {Object.entries(status.details.tests).map(([key, value]) => (
-                              <p key={key}>{value}</p>
+                              <p key={key}>{String(value)}</p>
                             ))}
                           </div>
                         )}
