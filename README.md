@@ -20,7 +20,32 @@
 - **汇率API**: ExchangeRate API (免费汇率服务)
 - **图标**: Lucide React
 
-## 快速开始
+## 📦 部署到生产环境
+
+### 部署到 Vercel（推荐）
+
+1. **推送代码到 GitHub**
+   ```bash
+   # 在 GitHub 创建新仓库后，执行：
+   git remote add origin https://github.com/YOUR_USERNAME/REPO_NAME.git
+   git branch -M main
+   git push -u origin main
+   ```
+
+2. **在 Vercel 部署**
+   - 访问 [Vercel](https://vercel.com) 并使用 GitHub 登录
+   - 点击 "Add New..." > "Project"
+   - 选择你的仓库并导入
+   - 在环境变量中添加 `OPENAI_API_KEY`（可选）
+   - 点击 "Deploy"
+
+3. **添加自定义域名**（可选）
+   - 在项目设置 > Domains 中添加你的域名
+   - 按照指引配置 DNS 记录
+
+详细部署说明请查看 [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
+
+## 快速开始（本地开发）
 
 ### 1. 安装依赖
 
