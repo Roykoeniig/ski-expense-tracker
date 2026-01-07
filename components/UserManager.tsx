@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Users, Plus, X, User, Shield, ShieldCheck, LogOut, Key } from 'lucide-react'
 import { User as UserType, UserRole } from '@/types'
-import { getUsers, saveUsers, getUsersSync, saveUsersSync } from '@/lib/storage'
+import { getUsers, saveUsers, getUsersSync, saveUsersSync, deleteUserSync } from '@/lib/storage'
 import { useLanguage } from '@/lib/language'
 import { hasPermission, getCurrentUser, logout } from '@/lib/auth'
 import ChangePasswordModal from './ChangePasswordModal'
@@ -62,7 +62,7 @@ export default function UserManager() {
     setShowForm(false)
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const userToDelete = users.find(u => u.id === id)
     if (!userToDelete) return
 
@@ -86,9 +86,10 @@ export default function UserManager() {
     }
 
     if (confirm(t('users.deleteConfirm'))) {
-      const updatedUsers = users.filter(u => u.id !== id)
-      saveUsersSync(updatedUsers)
-      setUsers(updatedUsers)
+      // 使用 deleteUserSync 来删除用户（会同时更新本地存储和数据库）
+      deleteUserSync(id)
+      // 重新加载用户列表以确保UI正确更新
+      await loadUsers()
     }
   }
 

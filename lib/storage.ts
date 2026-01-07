@@ -2,6 +2,7 @@ import { Expense, User, UserRole } from '@/types';
 import {
   getUsersFromDB,
   saveUsersToDB,
+  deleteUserFromDB,
   getExpensesFromDB,
   saveExpensesToDB,
   addExpenseToDB,
@@ -134,6 +135,38 @@ export function saveUsersSync(users: User[]): void {
   // 异步同步到数据库
   const expenses = getExpensesSync();
   syncToDatabase(users, expenses).catch(console.error);
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  // 先尝试从数据库删除
+  if (hasDatabase()) {
+    const success = await deleteUserFromDB(id);
+    if (success) {
+      // 数据库删除成功，更新本地缓存
+      const users = getUsersSync();
+      const filtered = users.filter(u => u.id !== id);
+      saveUsersSync(filtered);
+      return;
+    }
+  }
+  
+  // 如果数据库不可用，使用本地存储
+  const users = await getUsers();
+  await saveUsers(users.filter(u => u.id !== id));
+}
+
+export function deleteUserSync(id: string): void {
+  const users = getUsersSync();
+  const filtered = users.filter(u => u.id !== id);
+  saveUsersSync(filtered);
+  // 异步同步到数据库
+  const expenses = getExpensesSync();
+  syncToDatabase(filtered, expenses).catch(console.error);
+  
+  // 同时尝试从数据库删除
+  if (hasDatabase()) {
+    deleteUserFromDB(id).catch(console.error);
+  }
 }
 
 export async function getExpenses(): Promise<Expense[]> {

@@ -82,6 +82,36 @@ export async function saveUsersToDB(users: User[]): Promise<boolean> {
   }
 }
 
+// 删除用户
+export async function deleteUserFromDB(id: string): Promise<boolean> {
+  const supabase = createSupabaseClient()
+  if (!supabase) {
+    return false
+  }
+
+  try {
+    // 主管理员不能被删除
+    if (id === 'main-admin') {
+      return false
+    }
+
+    const { error } = await supabase
+      .from(TABLES.USERS)
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error deleting user:', error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('Failed to delete user:', error)
+    return false
+  }
+}
+
 // 获取记账列表
 export async function getExpensesFromDB(): Promise<Expense[]> {
   const supabase = createSupabaseClient()
