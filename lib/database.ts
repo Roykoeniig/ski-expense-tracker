@@ -43,24 +43,16 @@ export async function getUsersFromDB(): Promise<User[]> {
 export async function saveUsersToDB(users: User[]): Promise<boolean> {
   const supabase = createSupabaseClient()
   if (!supabase) {
+    console.warn('Supabase not configured')
     return false
   }
 
   try {
-    // 先删除所有现有用户（除了主管理员）
-    const { error: deleteError } = await supabase
-      .from(TABLES.USERS)
-      .delete()
-      .neq('id', 'main-admin')
-
-    if (deleteError) {
-      console.error('Error deleting users:', deleteError)
-    }
-
     // 过滤掉主管理员（主管理员不在数据库中）
     const usersToSave = users.filter(u => u.id !== 'main-admin')
 
     if (usersToSave.length > 0) {
+      // 使用 upsert 而不是先删除再插入，这样更高效且不会丢失数据
       const { error: insertError } = await supabase
         .from(TABLES.USERS)
         .upsert(usersToSave.map(user => ({
@@ -78,6 +70,9 @@ export async function saveUsersToDB(users: User[]): Promise<boolean> {
         console.error('Error saving users:', insertError)
         return false
       }
+    } else {
+      // 如果没有用户要保存，也返回成功（可能是清空操作）
+      return true
     }
 
     return true
@@ -127,21 +122,13 @@ export async function getExpensesFromDB(): Promise<Expense[]> {
 export async function saveExpensesToDB(expenses: Expense[]): Promise<boolean> {
   const supabase = createSupabaseClient()
   if (!supabase) {
+    console.warn('Supabase not configured')
     return false
   }
 
   try {
-    // 先删除所有现有记账
-    const { error: deleteError } = await supabase
-      .from(TABLES.EXPENSES)
-      .delete()
-      .neq('id', '')
-
-    if (deleteError) {
-      console.error('Error deleting expenses:', deleteError)
-    }
-
     if (expenses.length > 0) {
+      // 使用 upsert 批量保存，自动处理冲突
       const { error: insertError } = await supabase
         .from(TABLES.EXPENSES)
         .upsert(expenses.map(expense => ({
