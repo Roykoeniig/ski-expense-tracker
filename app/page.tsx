@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Mountain, Users, MessageSquare, Calculator, Camera, TrendingUp } from 'lucide-react'
+import { Mountain, Users, MessageSquare, Calculator, Camera, TrendingUp, Database } from 'lucide-react'
 import { Expense, User as UserType } from '@/types'
 import { getExpenses, getUsers, getUsersSync, getExpensesSync } from '@/lib/storage'
 import { formatCurrency } from '@/lib/currency'
@@ -116,6 +116,14 @@ export default function Home() {
               <Camera className="w-10 h-10 text-ski-primary mb-4 group-hover:scale-110 transition-transform" />
               <h3 className="text-xl font-bold text-gray-800 mb-2">照片墙</h3>
               <p className="text-gray-600">上传和分享滑雪照片</p>
+            </div>
+          </Link>
+
+          <Link href="/import-data" className="group">
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all hover:scale-105 border-2 border-dashed border-ski-primary">
+              <Database className="w-10 h-10 text-ski-primary mb-4 group-hover:scale-110 transition-transform" />
+              <h3 className="text-xl font-bold text-gray-800 mb-2">数据导入</h3>
+              <p className="text-gray-600">将本地数据导入到 Supabase</p>
             </div>
           </Link>
         </div>
