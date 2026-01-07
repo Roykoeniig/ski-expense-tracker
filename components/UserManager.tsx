@@ -25,8 +25,9 @@ export default function UserManager() {
     setCurrentUser(getCurrentUser())
   }, [])
 
-  const loadUsers = () => {
-    setUsers(getUsers())
+  const loadUsers = async () => {
+    const usersData = await getUsers()
+    setUsers(usersData)
   }
 
   const handleAdd = () => {

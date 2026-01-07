@@ -18,6 +18,11 @@ const STORAGE_KEYS = {
 
 // 检查是否配置了数据库
 function hasDatabase(): boolean {
+  if (typeof window === 'undefined') {
+    // 服务端检查
+    return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  }
+  // 客户端检查（从window对象获取，因为环境变量在客户端需要NEXT_PUBLIC_前缀）
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 }
 
