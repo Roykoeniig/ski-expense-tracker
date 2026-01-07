@@ -95,22 +95,40 @@ CREATE POLICY "Allow all operations on expenses" ON expenses
 
 ### 3.1 进入 API 设置
 1. 在 Supabase 项目页面，点击左侧 **"Settings"**（⚙️ 齿轮图标）
+   - 位置：左侧菜单底部，通常在 "Database" 下方
 2. 在设置菜单中，点击 **"API"**
+   - 位置：设置子菜单中，通常在 "General" 之后
 
-### 3.2 复制密钥
-你会看到两个重要的值：
+### 3.2 找到 Project URL
+在 API 页面**顶部**，你会看到：
 
-**1. Project URL**
-- 位置：在 "Project URL" 标题下
-- 格式：`https://xxxxx.supabase.co`
-- 📋 **复制这个 URL**（点击右侧的复制图标）
+**"Project URL"** 部分
+- 显示一个 URL，例如：`https://xxxxx.supabase.co`
+- 右侧有一个**复制图标**（📋 或两个重叠的方框）
+- 📋 **点击复制图标**复制这个 URL
 
-**2. anon public key**
-- 位置：在 "Project API keys" > "anon" > "public"
-- 格式：以 `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` 开头，很长
-- 📋 **复制这个 key**（点击右侧的复制图标）
+### 3.3 找到 anon public key
+向下滚动，找到 **"Project API keys"** 部分
 
+在这个部分，你会看到：
+
+**anon** `public` 
+- 这是你需要的 key
+- 显示为：`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2...`（很长的一串，200+ 字符）
+- 如果显示 **"Reveal"** 按钮，点击它显示完整 key
+- 然后点击右侧的**复制图标**（📋）复制
+
+⚠️ **注意**：
+- anon key 很长，确保完整复制
+- 不要复制 "service_role" key（那个是管理员密钥）
+- key 应该以 `eyJ` 开头
+
+### 3.4 保存密钥
 ⚠️ **重要**：请保存这两个值，下一步需要用到！
+- Project URL：`https://xxxxx.supabase.co`
+- anon public key：`eyJhbGc...`（很长）
+
+💡 **提示**：可以暂时保存在文本文件中，配置完环境变量后可以删除
 
 ---
 
