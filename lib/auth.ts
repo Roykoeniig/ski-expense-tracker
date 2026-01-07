@@ -59,7 +59,21 @@ export function setCurrentUser(user: User | null): void {
   }
 }
 
-// 登录
+// 登录（异步版本，会在登录前尝试同步用户列表）
+export async function loginAsync(username: string, password: string, rememberMe: boolean = false): Promise<{ success: boolean; user?: User; error?: string }> {
+  // 先尝试从数据库同步用户列表（如果可能）
+  try {
+    const { getUsers } = await import('@/lib/storage');
+    await getUsers();
+  } catch (err) {
+    console.warn('同步用户列表失败，使用本地数据:', err);
+  }
+  
+  // 然后使用同步版本的登录
+  return login(username, password, rememberMe);
+}
+
+// 登录（同步版本，使用本地存储的用户列表）
 export function login(username: string, password: string, rememberMe: boolean = false): { success: boolean; user?: User; error?: string } {
   // 检查是否是主管理员
   if (username === MAIN_ADMIN.name && password === MAIN_ADMIN.password) {
@@ -78,7 +92,7 @@ export function login(username: string, password: string, rememberMe: boolean = 
   const user = users.find(u => u.name === username);
   
   if (!user) {
-    return { success: false, error: '用户名或密码错误' };
+    return { success: false, error: '用户名或密码错误。如果这是新设备，请等待几秒让系统同步用户数据。' };
   }
 
   // 验证密码（如果用户有密码）

@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Lock, User as UserIcon } from 'lucide-react'
-import { login } from '@/lib/auth'
+import { loginAsync } from '@/lib/auth'
 import { useLanguage } from '@/lib/language'
+import { getUsers, getPhotos } from '@/lib/storage'
 
 interface LoginModalProps {
   isOpen: boolean
@@ -18,6 +19,25 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
+
+  // 当登录模态框打开时，先尝试从数据库同步用户列表和照片
+  useEffect(() => {
+    if (isOpen) {
+      setIsSyncing(true)
+      Promise.all([getUsers(), getPhotos()])
+        .then(() => {
+          console.log('用户列表和照片同步成功')
+        })
+        .catch((err) => {
+          console.error('数据同步失败:', err)
+          // 即使同步失败也继续，因为可以使用本地存储的数据
+        })
+        .finally(() => {
+          setIsSyncing(false)
+        })
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -26,7 +46,8 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
     setError('')
     setIsLoading(true)
 
-    const result = login(username, password, rememberMe)
+    // 使用异步登录函数，会自动同步用户列表
+    const result = await loginAsync(username, password, rememberMe)
     
     if (result.success) {
       onLoginSuccess()
@@ -35,7 +56,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       setPassword('')
       setRememberMe(false)
     } else {
-      setError(result.error || '登录失败')
+      setError(result.error || '登录失败，请检查用户名和密码')
     }
     
     setIsLoading(false)
@@ -55,6 +76,12 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {isSyncing && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg text-sm flex items-center space-x-2">
+              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <span>正在同步用户数据...</span>
+            </div>
+          )}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
@@ -114,10 +141,10 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
           <div className="flex space-x-3 pt-4">
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isSyncing}
               className="flex-1 bg-ski-primary text-white py-3 rounded-lg font-medium hover:bg-ski-primary/90 transition-colors disabled:opacity-50"
             >
-              {isLoading ? '登录中...' : '登录'}
+              {isLoading ? '登录中...' : isSyncing ? '同步中...' : '登录'}
             </button>
             <button
               type="button"

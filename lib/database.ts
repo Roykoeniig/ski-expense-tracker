@@ -5,6 +5,7 @@ import { createSupabaseClient } from './supabase'
 const TABLES = {
   USERS: 'users',
   EXPENSES: 'expenses',
+  PHOTOS: 'photos',
 }
 
 // 获取用户列表
@@ -285,6 +286,138 @@ export async function deleteExpenseFromDB(id: string): Promise<boolean> {
     return true
   } catch (error) {
     console.error('Failed to delete expense:', error)
+    return false
+  }
+}
+
+// 照片接口
+export interface Photo {
+  id: string
+  url: string
+  description?: string
+  date: string
+}
+
+// 获取照片列表
+export async function getPhotosFromDB(): Promise<Photo[]> {
+  const supabase = createSupabaseClient()
+  if (!supabase) {
+    return []
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from(TABLES.PHOTOS)
+      .select('*')
+      .order('date', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching photos:', error)
+      return []
+    }
+
+    return (data || []).map((photo: any) => ({
+      id: photo.id,
+      url: photo.url,
+      description: photo.description || undefined,
+      date: photo.date,
+    }))
+  } catch (error) {
+    console.error('Failed to fetch photos:', error)
+    return []
+  }
+}
+
+// 保存照片列表
+export async function savePhotosToDB(photos: Photo[]): Promise<boolean> {
+  const supabase = createSupabaseClient()
+  if (!supabase) {
+    console.warn('Supabase not configured')
+    return false
+  }
+
+  try {
+    if (photos.length > 0) {
+      // 使用 upsert 批量保存
+      const { error: insertError } = await supabase
+        .from(TABLES.PHOTOS)
+        .upsert(photos.map(photo => ({
+          id: photo.id,
+          url: photo.url,
+          description: photo.description || null,
+          date: photo.date,
+          updated_at: new Date().toISOString(),
+        })), {
+          onConflict: 'id'
+        })
+
+      if (insertError) {
+        console.error('Error saving photos:', insertError)
+        throw new Error(`保存照片失败: ${insertError.message} (${insertError.code || 'unknown'})`)
+      }
+    } else {
+      // 如果没有照片要保存，也返回成功（可能是清空操作）
+      return true
+    }
+
+    return true
+  } catch (error) {
+    console.error('Failed to save photos:', error)
+    return false
+  }
+}
+
+// 添加单个照片
+export async function addPhotoToDB(photo: Photo): Promise<boolean> {
+  const supabase = createSupabaseClient()
+  if (!supabase) {
+    return false
+  }
+
+  try {
+    const { error } = await supabase
+      .from(TABLES.PHOTOS)
+      .insert({
+        id: photo.id,
+        url: photo.url,
+        description: photo.description || null,
+        date: photo.date,
+        updated_at: new Date().toISOString(),
+      })
+
+    if (error) {
+      console.error('Error adding photo:', error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('Failed to add photo:', error)
+    return false
+  }
+}
+
+// 删除照片
+export async function deletePhotoFromDB(id: string): Promise<boolean> {
+  const supabase = createSupabaseClient()
+  if (!supabase) {
+    return false
+  }
+
+  try {
+    const { error } = await supabase
+      .from(TABLES.PHOTOS)
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error deleting photo:', error)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('Failed to delete photo:', error)
     return false
   }
 }

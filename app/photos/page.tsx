@@ -4,25 +4,29 @@ import { useState, useEffect } from 'react'
 import { Camera, Upload, X } from 'lucide-react'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import { useLanguage } from '@/lib/language'
-
-interface Photo {
-  id: string
-  url: string
-  description?: string
-  date: string
-}
+import { getPhotos, addPhotoSync, deletePhotoSync } from '@/lib/storage'
+import { Photo } from '@/lib/database'
 
 export default function PhotosPage() {
   const { t } = useLanguage()
   const [photos, setPhotos] = useState<Photo[]>([])
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // 从本地存储加载照片
-    const savedPhotos = localStorage.getItem('ski_photos')
-    if (savedPhotos) {
-      setPhotos(JSON.parse(savedPhotos))
+    // 从数据库同步照片
+    const loadPhotos = async () => {
+      setIsLoading(true)
+      try {
+        const photosData = await getPhotos()
+        setPhotos(photosData)
+      } catch (error) {
+        console.error('Failed to load photos:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
+    loadPhotos()
   }, [])
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +41,8 @@ export default function PhotosPage() {
         }
         const updatedPhotos = [...photos, newPhoto]
         setPhotos(updatedPhotos)
-        localStorage.setItem('ski_photos', JSON.stringify(updatedPhotos))
+        // 使用同步函数，会自动同步到数据库
+        addPhotoSync(newPhoto)
         
         // 触发自定义事件，通知背景组件更新
         window.dispatchEvent(new Event('photosUpdated'))
@@ -50,7 +55,8 @@ export default function PhotosPage() {
     if (confirm(t('photos.deleteConfirm'))) {
       const updatedPhotos = photos.filter(p => p.id !== id)
       setPhotos(updatedPhotos)
-      localStorage.setItem('ski_photos', JSON.stringify(updatedPhotos))
+      // 使用同步函数，会自动同步到数据库
+      deletePhotoSync(id)
       
       // 触发自定义事件，通知背景组件更新
       window.dispatchEvent(new Event('photosUpdated'))
@@ -76,7 +82,12 @@ export default function PhotosPage() {
         </div>
       </div>
 
-      {photos.length === 0 ? (
+      {isLoading ? (
+        <div className="bg-white/90 backdrop-blur-md rounded-lg p-12 text-center shadow-2xl border border-white/20">
+          <div className="w-16 h-16 border-4 border-ski-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500 text-lg">正在加载照片...</p>
+        </div>
+      ) : photos.length === 0 ? (
         <div className="bg-white/90 backdrop-blur-md rounded-lg p-12 text-center shadow-2xl border border-white/20">
           <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500 text-lg mb-4">{t('photos.noPhotos')}</p>

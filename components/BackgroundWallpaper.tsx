@@ -2,6 +2,8 @@
 
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import { getPhotos } from '@/lib/storage'
+import { Photo } from '@/lib/database'
 
 // 不同页面的默认背景图片 - 使用Unsplash的高质量滑雪小镇图片
 const defaultBackgroundImages = {
@@ -12,13 +14,6 @@ const defaultBackgroundImages = {
   '/photos': 'https://images.unsplash.com/photo-1551524164-687d55d7b9c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2400&q=90', // Interlaken 因特拉肯
 }
 
-interface Photo {
-  id: string
-  url: string
-  description?: string
-  date: string
-}
-
 export default function BackgroundWallpaper() {
   const pathname = usePathname()
   const [currentImage, setCurrentImage] = useState('')
@@ -26,25 +21,41 @@ export default function BackgroundWallpaper() {
   const [isLoading, setIsLoading] = useState(true)
   const [userPhotos, setUserPhotos] = useState<Photo[]>([])
 
-  // 从localStorage加载用户上传的照片
+  // 从数据库同步用户上传的照片
   useEffect(() => {
-    const loadUserPhotos = () => {
+    const loadUserPhotos = async () => {
       try {
-        const savedPhotos = localStorage.getItem('ski_photos')
-        if (savedPhotos) {
-          const photos: Photo[] = JSON.parse(savedPhotos)
-          // 确保照片数组有效且第一张照片有URL
-          if (photos.length > 0 && photos[0]?.url) {
-            setUserPhotos(photos)
-          } else {
-            setUserPhotos([])
-          }
+        // 先从数据库同步照片
+        const photos = await getPhotos()
+        // 确保照片数组有效
+        if (photos.length > 0) {
+          // 过滤出有效的照片URL
+          const validPhotos = photos.filter(photo => 
+            photo.url && 
+            (photo.url.startsWith('data:') || photo.url.startsWith('http'))
+          )
+          setUserPhotos(validPhotos)
         } else {
           setUserPhotos([])
         }
       } catch (error) {
         console.error('Failed to load user photos:', error)
-        setUserPhotos([])
+        // 如果数据库同步失败，尝试从本地存储读取
+        try {
+          const savedPhotos = localStorage.getItem('ski_photos')
+          if (savedPhotos) {
+            const photos: Photo[] = JSON.parse(savedPhotos)
+            const validPhotos = photos.filter(photo => 
+              photo.url && 
+              (photo.url.startsWith('data:') || photo.url.startsWith('http'))
+            )
+            setUserPhotos(validPhotos)
+          } else {
+            setUserPhotos([])
+          }
+        } catch (e) {
+          setUserPhotos([])
+        }
       }
     }
 
@@ -63,7 +74,7 @@ export default function BackgroundWallpaper() {
     // 定期检查（作为备用方案，确保照片更新能被检测到）
     const interval = setInterval(() => {
       loadUserPhotos()
-    }, 1000)
+    }, 5000) // 改为5秒检查一次，减少数据库请求
     
     return () => {
       window.removeEventListener('storage', handleStorageChange)
@@ -75,32 +86,13 @@ export default function BackgroundWallpaper() {
   // 获取当前应该显示的图片列表
   useEffect(() => {
     const getImageList = (): string[] => {
-      // 首页：固定使用照片墙的第一张照片（如果存在）
-      if (pathname === '/') {
-        if (userPhotos.length > 0 && userPhotos[0]?.url) {
-          const firstPhotoUrl = userPhotos[0].url.trim()
-          // 验证URL是否有效（data URL或http URL）
-          if (firstPhotoUrl && (firstPhotoUrl.startsWith('data:') || firstPhotoUrl.startsWith('http'))) {
-            return [firstPhotoUrl]
-          }
-        }
-        // 如果没有照片或URL无效，使用默认背景
-        return [defaultBackgroundImages['/']]
-      }
-      
-      // 子页面：使用照片墙的其他照片（从第二张开始）或所有照片轮播
-      if (userPhotos.length > 1) {
-        // 如果有2张或更多照片，子页面使用除第一张外的其他照片
-        const otherPhotos = userPhotos.slice(1)
+      // 如果有用户上传的照片，所有页面都使用这些照片
+      if (userPhotos.length > 0) {
+        const validPhotos = userPhotos
           .map(photo => photo.url?.trim())
           .filter(url => url && (url.startsWith('data:') || url.startsWith('http')))
-        if (otherPhotos.length > 0) {
-          return otherPhotos
-        }
-      } else if (userPhotos.length === 1 && userPhotos[0]?.url) {
-        const photoUrl = userPhotos[0].url.trim()
-        if (photoUrl && (photoUrl.startsWith('data:') || photoUrl.startsWith('http'))) {
-          return [photoUrl]
+        if (validPhotos.length > 0) {
+          return validPhotos
         }
       }
       
@@ -112,8 +104,8 @@ export default function BackgroundWallpaper() {
     const imageList = getImageList()
     
     if (imageList.length > 0) {
-      // 首页固定使用第一张，不轮播；子页面根据currentIndex轮播
-      const imageIndex = pathname === '/' ? 0 : (currentIndex % imageList.length)
+      // 所有页面都根据currentIndex轮播
+      const imageIndex = currentIndex % imageList.length
       const selectedImage = imageList[imageIndex]
       
       if (selectedImage && selectedImage.trim() !== '') {
@@ -128,9 +120,8 @@ export default function BackgroundWallpaper() {
         }
         img.onerror = () => {
           // 如果加载失败，使用默认背景
-          if (pathname === '/') {
-            setCurrentImage(defaultBackgroundImages['/'])
-          }
+          const defaultImage = defaultBackgroundImages[pathname as keyof typeof defaultBackgroundImages] || defaultBackgroundImages['/']
+          setCurrentImage(defaultImage)
           setIsLoading(false)
         }
       } else {
@@ -141,20 +132,17 @@ export default function BackgroundWallpaper() {
     }
   }, [pathname, userPhotos, currentIndex])
 
-  // 自动轮播：每10秒切换到下一张（仅子页面，首页不轮播）
+  // 自动轮播：每10秒切换到下一张（所有页面都轮播）
   useEffect(() => {
-    // 首页不轮播，固定使用第一张照片
-    if (pathname === '/') {
-      return
-    }
-
     const getImageList = (): string[] => {
-      // 子页面：使用照片墙的其他照片（从第二张开始）
-      if (userPhotos.length > 1) {
-        return userPhotos.slice(1).map(photo => photo.url)
-      } else if (userPhotos.length === 1) {
-        // 如果只有1张照片，子页面也使用它
-        return [userPhotos[0].url]
+      // 如果有用户上传的照片，使用这些照片
+      if (userPhotos.length > 0) {
+        const validPhotos = userPhotos
+          .map(photo => photo.url?.trim())
+          .filter(url => url && (url.startsWith('data:') || url.startsWith('http')))
+        if (validPhotos.length > 0) {
+          return validPhotos
+        }
       }
       // 否则使用默认背景
       return [defaultBackgroundImages[pathname as keyof typeof defaultBackgroundImages] || defaultBackgroundImages['/']]
