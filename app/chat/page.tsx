@@ -68,7 +68,7 @@ export default function ChatPage() {
       }
 
       // 调用AI解析
-      const expense = await parseExpenseFromText(input || t('chat.placeholder'), imageUrl)
+      const expense = await parseExpenseFromText(input || t('chat.placeholder'), imageUrl || undefined)
 
       if (expense) {
         // 自动创建记账
