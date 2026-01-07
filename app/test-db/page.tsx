@@ -111,7 +111,7 @@ export default function TestDBPage() {
             <ol className="list-decimal list-inside space-y-2 text-sm text-blue-700">
               <li>访问 <a href="https://supabase.com" target="_blank" className="underline">Supabase</a> 创建项目</li>
               <li>在 SQL Editor 中执行建表 SQL（见 SETUP_STEP_BY_STEP.md）</li>
-              <li>在 Settings{' > '}API 中获取 Project URL 和 anon key</li>
+              <li>在 Settings &gt; API 中获取 Project URL 和 anon key</li>
               <li>在 Vercel 中配置环境变量：
                 <ul className="list-disc list-inside ml-4 mt-1">
                   <li><code>NEXT_PUBLIC_SUPABASE_URL</code></li>
