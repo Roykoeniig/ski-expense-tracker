@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useLanguage } from '@/lib/language'
 import { getUsersSync, getExpensesSync } from '@/lib/storage'
-import { Upload, CheckCircle, XCircle, Loader2, Database } from 'lucide-react'
+import { Upload, CheckCircle, XCircle, Loader2, Database, AlertCircle } from 'lucide-react'
 
 export default function ImportDataPage() {
   const { t } = useLanguage()
@@ -160,6 +160,51 @@ export default function ImportDataPage() {
           </button>
 
           <button
+            onClick={async () => {
+              setStatus({ loading: true, success: null, message: '正在测试数据库连接...' });
+              try {
+                const response = await fetch('/api/test-import', { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                  setStatus({
+                    loading: false,
+                    success: true,
+                    message: data.message || '数据库测试通过！',
+                    details: data.tests,
+                  });
+                } else {
+                  setStatus({
+                    loading: false,
+                    success: false,
+                    message: data.error || '数据库测试失败',
+                    details: { ...data, hint: data.hint },
+                  });
+                }
+              } catch (error: any) {
+                setStatus({
+                  loading: false,
+                  success: false,
+                  message: `测试失败: ${error.message}`,
+                });
+              }
+            }}
+            disabled={status.loading}
+            className="w-full bg-blue-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+          >
+            {status.loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>测试中...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-5 h-5" />
+                <span>测试数据库连接</span>
+              </>
+            )}
+          </button>
+
+          <button
             onClick={importData}
             disabled={status.loading || !localData || (localData.users === 0 && localData.expenses === 0)}
             className="w-full bg-ski-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-ski-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
@@ -201,19 +246,47 @@ export default function ImportDataPage() {
                   <div className="mt-2">
                     {status.success && (
                       <div className="text-sm text-green-700">
-                        <p>✅ 导入用户：{status.details.users} 个</p>
-                        <p>✅ 导入记账：{status.details.expenses} 条</p>
+                        {status.details.users !== undefined && (
+                          <p>✅ 导入用户：{status.details.users} 个</p>
+                        )}
+                        {status.details.expenses !== undefined && (
+                          <p>✅ 导入记账：{status.details.expenses} 条</p>
+                        )}
+                        {status.details.tests && (
+                          <div className="mt-2 space-y-1">
+                            {Object.entries(status.details.tests).map(([key, value]) => (
+                              <p key={key}>{value}</p>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                     {!status.success && (
-                      <details className="mt-2">
-                        <summary className="cursor-pointer text-sm text-red-600">
-                          查看详细信息
-                        </summary>
-                        <pre className="mt-2 text-xs bg-gray-100 p-3 rounded overflow-auto">
-                          {JSON.stringify(status.details, null, 2)}
-                        </pre>
-                      </details>
+                      <div className="mt-2 space-y-2">
+                        {status.details.hint && (
+                          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                            <strong>💡 提示：</strong> {status.details.hint}
+                          </div>
+                        )}
+                        {status.details.details && (
+                          <div className="text-sm text-red-700">
+                            <strong>错误详情：</strong> {status.details.details}
+                          </div>
+                        )}
+                        {status.details.code && (
+                          <div className="text-sm text-red-700">
+                            <strong>错误代码：</strong> {status.details.code}
+                          </div>
+                        )}
+                        <details className="mt-2">
+                          <summary className="cursor-pointer text-sm text-red-600">
+                            查看完整错误信息
+                          </summary>
+                          <pre className="mt-2 text-xs bg-gray-100 p-3 rounded overflow-auto">
+                            {JSON.stringify(status.details, null, 2)}
+                          </pre>
+                        </details>
+                      </div>
                     )}
                   </div>
                 )}
