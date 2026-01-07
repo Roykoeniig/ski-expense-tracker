@@ -23,19 +23,51 @@ export async function POST(request: Request) {
     }
 
     // 导入用户数据
-    const usersSaved = await saveUsersToDB(users as User[]);
-    if (!usersSaved) {
+    try {
+      const usersSaved = await saveUsersToDB(users as User[]);
+      if (!usersSaved) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: '导入用户数据失败',
+            hint: '请检查：1. Supabase 表是否已创建 2. RLS策略是否已配置 3. 环境变量是否正确'
+          },
+          { status: 500 }
+        );
+      }
+    } catch (userError: any) {
       return NextResponse.json(
-        { success: false, error: '导入用户数据失败' },
+        { 
+          success: false, 
+          error: '导入用户数据失败',
+          details: userError.message || '未知错误',
+          hint: '请检查：1. Supabase 表是否已创建 2. RLS策略是否已配置 3. 环境变量是否正确'
+        },
         { status: 500 }
       );
     }
 
     // 导入记账数据
-    const expensesSaved = await saveExpensesToDB(expenses as Expense[]);
-    if (!expensesSaved) {
+    try {
+      const expensesSaved = await saveExpensesToDB(expenses as Expense[]);
+      if (!expensesSaved) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: '导入记账数据失败',
+            hint: '请检查：1. Supabase 表是否已创建 2. RLS策略是否已配置 3. 环境变量是否正确'
+          },
+          { status: 500 }
+        );
+      }
+    } catch (expenseError: any) {
       return NextResponse.json(
-        { success: false, error: '导入记账数据失败' },
+        { 
+          success: false, 
+          error: '导入记账数据失败',
+          details: expenseError.message || '未知错误',
+          hint: '请检查：1. Supabase 表是否已创建 2. RLS策略是否已配置 3. 环境变量是否正确'
+        },
         { status: 500 }
       );
     }

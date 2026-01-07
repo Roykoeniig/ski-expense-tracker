@@ -68,7 +68,7 @@ export async function saveUsersToDB(users: User[]): Promise<boolean> {
 
       if (insertError) {
         console.error('Error saving users:', insertError)
-        return false
+        throw new Error(`保存用户失败: ${insertError.message} (${insertError.code || 'unknown'})`)
       }
     } else {
       // 如果没有用户要保存，也返回成功（可能是清空操作）
@@ -149,7 +149,7 @@ export async function saveExpensesToDB(expenses: Expense[]): Promise<boolean> {
 
       if (insertError) {
         console.error('Error saving expenses:', insertError)
-        return false
+        throw new Error(`保存记账失败: ${insertError.message} (${insertError.code || 'unknown'})`)
       }
     }
 
