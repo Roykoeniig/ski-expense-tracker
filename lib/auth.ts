@@ -1,5 +1,5 @@
 import { User, UserRole } from '@/types';
-import { saveUsers as saveUsersToStorage, getUsers as getUsersFromStorage } from '@/lib/storage';
+import { saveUsersSync, getUsersSync } from '@/lib/storage';
 
 // 主管理员初始账户
 const MAIN_ADMIN = {
@@ -22,7 +22,7 @@ export function getCurrentUser(): User | null {
       const thirtyDays = 30 * 24 * 60 * 60 * 1000;
       if (Date.now() - timestamp < thirtyDays) {
         // 从用户列表中找到用户
-        const users = getUsersFromStorage();
+        const users = getUsersSync();
         let user = users.find(u => u.name === username);
         
         // 如果是主管理员
@@ -74,7 +74,7 @@ export function login(username: string, password: string, rememberMe: boolean = 
   }
 
   // 检查其他管理员和用户
-  const users = getUsersFromStorage();
+  const users = getUsersSync();
   const user = users.find(u => u.name === username);
   
   if (!user) {
@@ -126,7 +126,7 @@ export function changePassword(oldPassword: string, newPassword: string): { succ
     return { success: false, error: '主管理员密码需要在代码中修改' };
   }
 
-  const users = getUsersFromStorage();
+  const users = getUsersSync();
   const userIndex = users.findIndex(u => u.id === user.id);
   
   if (userIndex === -1) {
@@ -140,7 +140,7 @@ export function changePassword(oldPassword: string, newPassword: string): { succ
 
   // 更新密码
   users[userIndex].password = newPassword;
-  saveUsersToStorage(users);
+  saveUsersSync(users);
 
   // 更新当前用户信息
   const updatedUser = { ...user, password: newPassword };
